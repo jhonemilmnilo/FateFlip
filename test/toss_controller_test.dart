@@ -21,7 +21,7 @@ void main() {
       prefs = await SharedPreferences.getInstance();
     });
 
-    test('Initial state loads saved labels from SharedPreferences', () {
+    test('Initial state starts fresh and blank on app open', () {
       final container = ProviderContainer(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),
@@ -30,10 +30,10 @@ void main() {
       addTearDown(container.dispose);
 
       final state = container.read(tossControllerProvider);
-      expect(state.headsLabel, 'Oo');
-      expect(state.tailsLabel, 'Hindi');
-      expect(state.effectiveHeadsLabel, 'Oo');
-      expect(state.effectiveTailsLabel, 'Hindi');
+      expect(state.headsLabel, '');
+      expect(state.tailsLabel, '');
+      expect(state.effectiveHeadsLabel, TossConfig.fallbackHeadsLabel);
+      expect(state.effectiveTailsLabel, TossConfig.fallbackTailsLabel);
       expect(state.isFlipping, false);
       expect(state.resultLabel, null);
     });

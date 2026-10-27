@@ -1,9 +1,6 @@
-import 'dart:async';
 import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../main.dart';
 import 'toss_config.dart';
 
 enum CoinSide { heads, tails }
@@ -55,28 +52,19 @@ class TossState {
 }
 
 class TossController extends Notifier<TossState> {
-  late final SharedPreferences _prefs;
   late final Random _random;
-  Timer? _debounceTimer;
 
   // Injection of random (defaults to Random.secure() in production)
   Random? injectedRandom;
 
   @override
   TossState build() {
-    _prefs = ref.watch(sharedPreferencesProvider);
     _random = injectedRandom ?? Random.secure();
 
-    final savedHeads = _prefs.getString(TossConfig.prefsHeadsKey) ?? TossConfig.defaultHeadsLabel;
-    final savedTails = _prefs.getString(TossConfig.prefsTailsKey) ?? TossConfig.defaultTailsLabel;
-
-    ref.onDispose(() {
-      _debounceTimer?.cancel();
-    });
-
-    return TossState(
-      headsLabel: savedHeads,
-      tailsLabel: savedTails,
+    // Fresh session: inputs always start blank on app launch/restart
+    return const TossState(
+      headsLabel: TossConfig.defaultHeadsLabel,
+      tailsLabel: TossConfig.defaultTailsLabel,
       isFlipping: false,
       resultSide: null,
       resultLabel: null,
@@ -86,19 +74,10 @@ class TossController extends Notifier<TossState> {
 
   void updateHeadsLabel(String text) {
     state = state.copyWith(headsLabel: text);
-    _schedulePersist(TossConfig.prefsHeadsKey, text);
   }
 
   void updateTailsLabel(String text) {
     state = state.copyWith(tailsLabel: text);
-    _schedulePersist(TossConfig.prefsTailsKey, text);
-  }
-
-  void _schedulePersist(String key, String value) {
-    _debounceTimer?.cancel();
-    _debounceTimer = Timer(TossConfig.prefsDebounce, () {
-      _prefs.setString(key, value);
-    });
   }
 
   /// Decides outcome FIRST before starting animation (spec rule 3 & 4)
