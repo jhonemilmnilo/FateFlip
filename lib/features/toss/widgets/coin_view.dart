@@ -73,13 +73,14 @@ class CoinViewState extends State<CoinView> with SingleTickerProviderStateMixin 
 
   void _buildAnimations({required bool disableAnimations}) {
 
-    // A. Flip Angle (rotateX) with smooth fast-launch slow-settle cubic easing
+    // A. Flip Angle (rotateX) with realistic rotational inertia:
+    // explosive launch spin that naturally decelerates smoothly as it lands
     _angleAnimation = Tween<double>(
       begin: _startAngle,
       end: _targetAngle,
     ).animate(CurvedAnimation(
       parent: _controller,
-      curve: const Cubic(0.25, 0.55, 0.35, 1.0),
+      curve: const Cubic(0.20, 0.70, 0.25, 1.0),
     ));
 
     if (disableAnimations) {
@@ -91,41 +92,44 @@ class CoinViewState extends State<CoinView> with SingleTickerProviderStateMixin 
       return;
     }
 
-    // B. Toss Arc (translateY) with precise weights summing to 100
+    // B. Toss Arc (translateY) with crisp, weighted physics:
+    // Launch (44) -> Fall (38) -> First bounce impact & recovery (10) -> Micro-damped settle (8)
     _translationYAnimation = TweenSequence<double>([
       TweenSequenceItem(
         tween: Tween<double>(begin: 0.0, end: TossConfig.tossApexHeight)
-            .chain(CurveTween(curve: Curves.easeOutQuad)),
-        weight: 45,
+            .chain(CurveTween(curve: Curves.easeOutCubic)),
+        weight: 44,
       ),
       TweenSequenceItem(
         tween: Tween<double>(begin: TossConfig.tossApexHeight, end: 0.0)
             .chain(CurveTween(curve: Curves.easeInQuad)),
-        weight: 37,
+        weight: 38,
       ),
+      // Sharp metallic bounce 1
       TweenSequenceItem(
         tween: Tween<double>(begin: 0.0, end: TossConfig.bounce1Height)
-            .chain(CurveTween(curve: Curves.easeOut)),
-        weight: 4,
+            .chain(CurveTween(curve: Curves.easeOutQuad)),
+        weight: 5,
       ),
       TweenSequenceItem(
         tween: Tween<double>(begin: TossConfig.bounce1Height, end: 0.0)
-            .chain(CurveTween(curve: Curves.easeIn)),
-        weight: 4,
+            .chain(CurveTween(curve: Curves.easeInQuad)),
+        weight: 5,
       ),
+      // Crisp micro-bounce 2
       TweenSequenceItem(
         tween: Tween<double>(begin: 0.0, end: TossConfig.bounce2Height)
-            .chain(CurveTween(curve: Curves.easeOut)),
-        weight: 2.5,
+            .chain(CurveTween(curve: Curves.easeOutQuad)),
+        weight: 3,
       ),
       TweenSequenceItem(
         tween: Tween<double>(begin: TossConfig.bounce2Height, end: 0.0)
-            .chain(CurveTween(curve: Curves.easeIn)),
-        weight: 2.5,
+            .chain(CurveTween(curve: Curves.easeInQuad)),
+        weight: 3,
       ),
       TweenSequenceItem(
         tween: ConstantTween<double>(0.0),
-        weight: 5,
+        weight: 2,
       ),
     ]).animate(_controller);
 
@@ -187,6 +191,7 @@ class CoinViewState extends State<CoinView> with SingleTickerProviderStateMixin 
   void startFlip({
     required double targetAngle,
     required int spins,
+    Duration? duration,
   }) {
     _startAngle = widget.currentAngle;
     _targetAngle = targetAngle;
@@ -198,6 +203,10 @@ class CoinViewState extends State<CoinView> with SingleTickerProviderStateMixin 
     _bounce2HapticTriggered = false;
 
     final disableAnimations = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    _controller.duration = disableAnimations
+        ? TossConfig.reducedMotionDuration
+        : (duration ?? TossConfig.flipDuration);
+
     _buildAnimations(disableAnimations: disableAnimations);
 
     // Launch Haptics (spec 7.D)
@@ -363,26 +372,36 @@ class CoinViewState extends State<CoinView> with SingleTickerProviderStateMixin 
         ),
         child: Center(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                label,
-                textAlign: TextAlign.center,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: TossConfig.coinTextMaxFontSize,
-                  fontWeight: FontWeight.w800,
-                  color: textColor,
-                  letterSpacing: 0.5,
-                  shadows: [
-                    Shadow(
-                      offset: const Offset(0.0, 1.0),
-                      blurRadius: 1.0,
-                      color: embossColor,
+            padding: const EdgeInsets.symmetric(horizontal: 28.0),
+            child: SizedBox(
+              width: diameter - 56.0,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: diameter - 56.0,
+                  ),
+                  child: Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    softWrap: true,
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: TossConfig.coinTextMaxFontSize,
+                      fontWeight: FontWeight.w800,
+                      color: textColor,
+                      height: 1.15,
+                      letterSpacing: 0.3,
+                      shadows: [
+                        Shadow(
+                          offset: const Offset(0.0, 1.0),
+                          blurRadius: 1.0,
+                          color: embossColor,
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),

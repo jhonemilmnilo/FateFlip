@@ -7,6 +7,8 @@ class TossConfig {
 
   // Animation durations
   static const Duration flipDuration = Duration(milliseconds: 1700);
+  static const int minFlipDurationMs = 1500;
+  static const int maxFlipDurationMs = 2100;
   static const Duration reducedMotionDuration = Duration(milliseconds: 500);
   static const Duration resultFadeDuration = Duration(milliseconds: 220);
   static const Duration fabPressDuration = Duration(milliseconds: 120);
@@ -28,7 +30,7 @@ class TossConfig {
   // 3D Perspective & Rotation
   static const double perspective = 0.0012;
   static const int minSpins = 5;
-  static const int maxSpins = 8;
+  static const int maxSpins = 9;
   static const double flightWobbleX = 6.0; // +/- px
   static const double flightWobbleZ = 0.08; // +/- rad
 
@@ -38,11 +40,11 @@ class TossConfig {
   static const double coinThickness = 8.0; // Thickness fake disc spacing
   static const int thicknessLayers = 8;
 
-  // Arc Tweens (TranslateY px) - high dramatic launch apex
-  static const double tossApexHeight = -380.0;
-  static const double bounce1Height = -22.0;
-  static const double bounce2Height = -6.0;
-  static const double maxScaleApex = 1.3;
+  // Arc Tweens (TranslateY px) - high dramatic launch apex with tactile metallic micro-bounces
+  static const double tossApexHeight = -390.0;
+  static const double bounce1Height = -16.0;
+  static const double bounce2Height = -4.0;
+  static const double maxScaleApex = 1.32;
 
   // Ground Shadow
   static const double shadowMinScale = 0.45;
@@ -56,11 +58,11 @@ class TossConfig {
   static const double scrollBottomPadding = 100.0;
 
   // Typographic scale
-  static const double labelFontSize = 13.0;
-  static const double inputFontSize = 16.0;
-  static const double resultFontSize = 22.0;
-  static const double coinTextMaxFontSize = 44.0;
-  static const double resultSlideOffset = 8.0;
+  static const double labelFontSize = 12.0;
+  static const double inputFontSize = 15.0;
+  static const double resultFontSize = 18.0;
+  static const double coinTextMaxFontSize = 28.0;
+  static const double resultSlideOffset = 6.0;
 
   // Helper calculation for target angle
   static double calculateTargetAngle({

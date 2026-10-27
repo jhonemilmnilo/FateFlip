@@ -102,7 +102,7 @@ class TossController extends Notifier<TossState> {
   }
 
   /// Decides outcome FIRST before starting animation (spec rule 3 & 4)
-  ({CoinSide side, String label, double targetAngle, int spins})? prepareToss() {
+  ({CoinSide side, String label, double targetAngle, int spins, Duration duration})? prepareToss() {
     if (state.isFlipping) return null;
 
     final isHeads = _random.nextBool();
@@ -116,6 +116,11 @@ class TossController extends Notifier<TossState> {
       spins: spins,
     );
 
+    // Natural variability in flip duration (e.g. 1500ms - 2100ms)
+    final durationMs = TossConfig.minFlipDurationMs +
+        _random.nextInt(TossConfig.maxFlipDurationMs - TossConfig.minFlipDurationMs + 1);
+    final flipDuration = Duration(milliseconds: durationMs);
+
     // Clear old result the moment a new toss starts (spec 5.3)
     state = state.copyWith(
       isFlipping: true,
@@ -128,6 +133,7 @@ class TossController extends Notifier<TossState> {
       label: winningLabel,
       targetAngle: targetAngle,
       spins: spins,
+      duration: flipDuration,
     );
   }
 

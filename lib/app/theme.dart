@@ -31,11 +31,11 @@ class AppTheme {
         fillColor: colorScheme.surfaceContainerHighest,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
       ),
@@ -66,11 +66,11 @@ class AppTheme {
         fillColor: colorScheme.surfaceContainerHighest,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
       ),

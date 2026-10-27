@@ -64,10 +64,11 @@ class _TossScreenState extends ConsumerState<TossScreen> with SingleTickerProvid
 
     _resultFadeController.reset();
 
-    // Trigger physical coin flip
+    // Trigger physical coin flip with realistic variable duration
     _coinViewKey.currentState?.startFlip(
       targetAngle: tossPlan.targetAngle,
       spins: tossPlan.spins,
+      duration: tossPlan.duration,
     );
   }
 
@@ -103,7 +104,7 @@ class _TossScreenState extends ConsumerState<TossScreen> with SingleTickerProvid
               TossConfig.maxCoinDiameter,
             );
             // Dynamic scale on shorter screens
-            final coinDiameter = math.min(targetCoinSize, screenHeight * 0.38);
+            final coinDiameter = math.min(targetCoinSize, screenHeight * 0.36);
 
             return SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
@@ -111,47 +112,49 @@ class _TossScreenState extends ConsumerState<TossScreen> with SingleTickerProvid
                 constraints: BoxConstraints(
                   minHeight: constraints.maxHeight - 32.0,
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // TOP: Result announcement area
-                    _buildResultArea(theme, tossState),
+                child: IntrinsicHeight(
+                  child: Column(
+                    children: [
+                      // TOP: Result announcement area
+                      _buildResultArea(theme, tossState),
 
-                    const SizedBox(height: 72),
+                      // Spacer fills all extra screen height, pinning coin & inputs to the bottom!
+                      const Spacer(),
 
-                    // CENTER STAGE: Coin & ground shadow (shifted lower for maximum flip clearance)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 20.0, bottom: 8.0),
-                      child: Center(
-                        child: CoinView(
-                          key: _coinViewKey,
-                          diameter: coinDiameter,
-                          headsLabel: tossState.effectiveHeadsLabel,
-                          tailsLabel: tossState.effectiveTailsLabel,
-                          isFlipping: tossState.isFlipping,
-                          currentAngle: tossState.currentAngle,
-                          onAnimationComplete: () {
-                            final isHeads = math.cos(tossState.currentAngle) >= 0;
-                            final winningSide = isHeads ? CoinSide.heads : CoinSide.tails;
-                            final winningLabel = isHeads
-                                ? tossState.effectiveHeadsLabel
-                                : tossState.effectiveTailsLabel;
+                      // STAGE: Coin & ground shadow sitting right on top of controls
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 4.0),
+                        child: Center(
+                          child: CoinView(
+                            key: _coinViewKey,
+                            diameter: coinDiameter,
+                            headsLabel: tossState.effectiveHeadsLabel,
+                            tailsLabel: tossState.effectiveTailsLabel,
+                            isFlipping: tossState.isFlipping,
+                            currentAngle: tossState.currentAngle,
+                            onAnimationComplete: () {
+                              final isHeads = math.cos(tossState.currentAngle) >= 0;
+                              final winningSide = isHeads ? CoinSide.heads : CoinSide.tails;
+                              final winningLabel = isHeads
+                                  ? tossState.effectiveHeadsLabel
+                                  : tossState.effectiveTailsLabel;
 
-                            _onFlipComplete(
-                              side: winningSide,
-                              label: winningLabel,
-                              finalAngle: tossState.currentAngle,
-                            );
-                          },
+                              _onFlipComplete(
+                                side: winningSide,
+                                label: winningLabel,
+                                finalAngle: tossState.currentAngle,
+                              );
+                            },
+                          ),
                         ),
                       ),
-                    ),
 
-                    const SizedBox(height: 12),
+                      const SizedBox(height: 8),
 
-                    // BOTTOM: Inputs on the left, Toss FAB on the right
-                    _buildBottomControlBar(theme, tossState),
-                  ],
+                      // BOTTOM: Inputs on the left, Toss FAB on the right
+                      _buildBottomControlBar(theme, tossState),
+                    ],
+                  ),
                 ),
               ),
             );
@@ -161,7 +164,7 @@ class _TossScreenState extends ConsumerState<TossScreen> with SingleTickerProvid
     );
   }
 
-  /// TOP: Clean result banner (Empty until flip settles and produces a winner)
+  /// TOP: Clean result banner (Card removed, clean compact typography)
   Widget _buildResultArea(ThemeData theme, TossState state) {
     final hasResult = state.resultLabel != null && !state.isFlipping;
 
@@ -170,8 +173,8 @@ class _TossScreenState extends ConsumerState<TossScreen> with SingleTickerProvid
       label: hasResult
           ? 'Winner is ${state.resultLabel}, ${state.resultSide == CoinSide.heads ? 'Heads' : 'Tails'}'
           : '',
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 76),
+      child: SizedBox(
+        height: 52, // Reserved compact height so layout remains stable
         child: AnimatedBuilder(
           animation: _resultFadeAnimation,
           builder: (context, child) {
@@ -184,13 +187,7 @@ class _TossScreenState extends ConsumerState<TossScreen> with SingleTickerProvid
             );
           },
           child: hasResult
-              ? Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
+              ? Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -198,10 +195,10 @@ class _TossScreenState extends ConsumerState<TossScreen> with SingleTickerProvid
                         state.resultLabel!,
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: TossConfig.resultFontSize + 4,
-                          fontWeight: FontWeight.w800,
+                          fontSize: TossConfig.resultFontSize,
+                          fontWeight: FontWeight.w700,
                           color: theme.colorScheme.onSurface,
-                          letterSpacing: 0.5,
+                          letterSpacing: 0.3,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -209,7 +206,7 @@ class _TossScreenState extends ConsumerState<TossScreen> with SingleTickerProvid
                         state.resultSide == CoinSide.heads ? 'Heads' : 'Tails',
                         style: TextStyle(
                           fontSize: TossConfig.labelFontSize,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w500,
                           color: theme.colorScheme.primary,
                         ),
                       ),
