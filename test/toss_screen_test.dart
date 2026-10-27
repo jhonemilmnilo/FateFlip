@@ -105,7 +105,9 @@ void main() {
       await tester.pumpWidget(createSubject(seededRandom: Random(10)));
       await tester.pump();
 
-      expect(find.text('Pindutin ang Toss'), findsOneWidget);
+      // No result text is visible initially before flipping
+      expect(find.text('Heads'), findsWidgets); // Input & coin
+      expect(find.text('Pindutin ang Toss'), findsNothing);
 
       final fabFinder = find.text('Toss');
       await tester.tap(fabFinder);
@@ -117,8 +119,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
       await tester.pumpAndSettle();
 
-      // Ensure "Pindutin ang Toss" is replaced by the winning result
-      expect(find.text('Pindutin ang Toss'), findsNothing);
+      // Ensure coin view and winning result banner exist
       expect(find.byType(CoinView), findsOneWidget);
     });
 

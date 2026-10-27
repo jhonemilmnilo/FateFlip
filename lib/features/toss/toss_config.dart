@@ -18,9 +18,9 @@ class TossConfig {
   static const String prefsHeadsKey = 'toss_heads_label';
   static const String prefsTailsKey = 'toss_tails_label';
 
-  // Default labels
-  static const String defaultHeadsLabel = 'Oo';
-  static const String defaultTailsLabel = 'Hindi';
+  // Default labels (empty by default, users can freely input or rely on fallbacks)
+  static const String defaultHeadsLabel = '';
+  static const String defaultTailsLabel = '';
   static const String fallbackHeadsLabel = 'Heads';
   static const String fallbackTailsLabel = 'Tails';
   static const int maxLabelLength = 40;
@@ -38,8 +38,8 @@ class TossConfig {
   static const double coinThickness = 8.0; // Thickness fake disc spacing
   static const int thicknessLayers = 8;
 
-  // Arc Tweens (TranslateY px)
-  static const double tossApexHeight = -240.0;
+  // Arc Tweens (TranslateY px) - high dramatic launch apex
+  static const double tossApexHeight = -380.0;
   static const double bounce1Height = -22.0;
   static const double bounce2Height = -6.0;
   static const double maxScaleApex = 1.3;
