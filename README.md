@@ -1,17 +1,16 @@
-# fate_flip
+# Fate Flip 🪙
 
-A new Flutter project.
+A hyper-polished, zero-bloat 3D coin toss decision helper built with Flutter and Riverpod.
 
-## Getting Started
+## How to Run
 
-This project is a starting point for a Flutter application.
+```bash
+flutter run
+```
 
-A few resources to get you started if this is your first Flutter project:
+## How to Tweak Physics & Tunables
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+All tunable parameters live in `lib/features/toss/toss_config.dart`:
+- **Apex Height**: edit `tossApexHeight` (default `-240.0` px).
+- **Spins Range**: edit `minSpins` (default `5`) and `maxSpins` (default `8`).
+- **Flip Duration**: edit `flipDuration` (default `1700` ms) or `reducedMotionDuration` (`500` ms).
