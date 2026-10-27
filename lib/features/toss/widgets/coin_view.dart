@@ -12,7 +12,7 @@ class CoinView extends StatefulWidget {
   final String tailsLabel;
   final bool isFlipping;
   final double currentAngle;
-  final VoidCallback onAnimationComplete;
+  final ValueChanged<double> onAnimationComplete;
 
   const CoinView({
     super.key,
@@ -230,7 +230,7 @@ class CoinViewState extends State<CoinView> with SingleTickerProviderStateMixin 
   void _handleStatusChange(AnimationStatus status) {
     if (status == AnimationStatus.completed) {
       HapticFeedback.selectionClick();
-      widget.onAnimationComplete();
+      widget.onAnimationComplete(_targetAngle);
     }
   }
 

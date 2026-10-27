@@ -14,14 +14,10 @@ class TossScreen extends ConsumerStatefulWidget {
   ConsumerState<TossScreen> createState() => _TossScreenState();
 }
 
-class _TossScreenState extends ConsumerState<TossScreen> with SingleTickerProviderStateMixin {
+class _TossScreenState extends ConsumerState<TossScreen> {
   late final TextEditingController _headsController;
   late final TextEditingController _tailsController;
   final GlobalKey<CoinViewState> _coinViewKey = GlobalKey<CoinViewState>();
-
-  late final AnimationController _resultFadeController;
-  late final Animation<double> _resultFadeAnimation;
-  late final Animation<Offset> _resultSlideAnimation;
 
   @override
   void initState() {
@@ -29,31 +25,14 @@ class _TossScreenState extends ConsumerState<TossScreen> with SingleTickerProvid
     final initial = ref.read(tossControllerProvider);
     _headsController = TextEditingController(text: initial.headsLabel);
     _tailsController = TextEditingController(text: initial.tailsLabel);
-
-    _resultFadeController = AnimationController(
-      vsync: this,
-      duration: TossConfig.resultFadeDuration,
-    );
-
-    _resultFadeAnimation = CurvedAnimation(
-      parent: _resultFadeController,
-      curve: Curves.easeOut,
-    );
-
-    _resultSlideAnimation = Tween<Offset>(
-      begin: const Offset(0.0, -TossConfig.resultSlideOffset / 22.0),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _resultFadeController,
-      curve: Curves.easeOut,
-    ));
   }
+
+  ({CoinSide side, String label, double targetAngle, int spins, Duration duration})? _currentTossPlan;
 
   @override
   void dispose() {
     _headsController.dispose();
     _tailsController.dispose();
-    _resultFadeController.dispose();
     super.dispose();
   }
 
@@ -62,7 +41,7 @@ class _TossScreenState extends ConsumerState<TossScreen> with SingleTickerProvid
     final tossPlan = controller.prepareToss();
     if (tossPlan == null) return;
 
-    _resultFadeController.reset();
+    _currentTossPlan = tossPlan;
 
     // Trigger physical coin flip with realistic variable duration
     _coinViewKey.currentState?.startFlip(
@@ -72,18 +51,23 @@ class _TossScreenState extends ConsumerState<TossScreen> with SingleTickerProvid
     );
   }
 
-  void _onFlipComplete({
-    required CoinSide side,
-    required String label,
-    required double finalAngle,
-  }) {
+  void _onFlipComplete(double finalAngle) {
+    final plan = _currentTossPlan;
+    final tossState = ref.read(tossControllerProvider);
+
+    // Finalize flip outcome
+    final isHeads = math.cos(finalAngle) >= 0;
+    final winningSide = plan?.side ?? (isHeads ? CoinSide.heads : CoinSide.tails);
+    final winningLabel = plan?.label ??
+        (winningSide == CoinSide.heads
+            ? tossState.effectiveHeadsLabel
+            : tossState.effectiveTailsLabel);
+
     ref.read(tossControllerProvider.notifier).finalizeFlip(
-          side: side,
-          label: label,
+          side: winningSide,
+          label: winningLabel,
           finalAngle: finalAngle,
         );
-
-    _resultFadeController.forward();
   }
 
   @override
@@ -107,23 +91,20 @@ class _TossScreenState extends ConsumerState<TossScreen> with SingleTickerProvid
             final coinDiameter = math.min(targetCoinSize, screenHeight * 0.36);
 
             return SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+              padding: const EdgeInsets.fromLTRB(20.0, 16.0, 20.0, 36.0), // Elevated bottom space
               child: ConstrainedBox(
                 constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight - 32.0,
+                  minHeight: constraints.maxHeight - 52.0,
                 ),
                 child: IntrinsicHeight(
                   child: Column(
                     children: [
-                      // TOP: Result announcement area
-                      _buildResultArea(theme, tossState),
-
-                      // Spacer fills all extra screen height, pinning coin & inputs to the bottom!
+                      // Spacer leaves the top area completely clear and serene
                       const Spacer(),
 
                       // STAGE: Coin & ground shadow sitting right on top of controls
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 4.0),
+                        padding: const EdgeInsets.only(bottom: 12.0),
                         child: Center(
                           child: CoinView(
                             key: _coinViewKey,
@@ -132,24 +113,12 @@ class _TossScreenState extends ConsumerState<TossScreen> with SingleTickerProvid
                             tailsLabel: tossState.effectiveTailsLabel,
                             isFlipping: tossState.isFlipping,
                             currentAngle: tossState.currentAngle,
-                            onAnimationComplete: () {
-                              final isHeads = math.cos(tossState.currentAngle) >= 0;
-                              final winningSide = isHeads ? CoinSide.heads : CoinSide.tails;
-                              final winningLabel = isHeads
-                                  ? tossState.effectiveHeadsLabel
-                                  : tossState.effectiveTailsLabel;
-
-                              _onFlipComplete(
-                                side: winningSide,
-                                label: winningLabel,
-                                finalAngle: tossState.currentAngle,
-                              );
-                            },
+                            onAnimationComplete: _onFlipComplete,
                           ),
                         ),
                       ),
 
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 12),
 
                       // BOTTOM: Inputs on the left, Toss FAB on the right
                       _buildBottomControlBar(theme, tossState),
@@ -159,61 +128,6 @@ class _TossScreenState extends ConsumerState<TossScreen> with SingleTickerProvid
               ),
             );
           },
-        ),
-      ),
-    );
-  }
-
-  /// TOP: Clean result banner (Card removed, clean compact typography)
-  Widget _buildResultArea(ThemeData theme, TossState state) {
-    final hasResult = state.resultLabel != null && !state.isFlipping;
-
-    return Semantics(
-      liveRegion: true,
-      label: hasResult
-          ? 'Winner is ${state.resultLabel}, ${state.resultSide == CoinSide.heads ? 'Heads' : 'Tails'}'
-          : '',
-      child: SizedBox(
-        height: 52, // Reserved compact height so layout remains stable
-        child: AnimatedBuilder(
-          animation: _resultFadeAnimation,
-          builder: (context, child) {
-            return Opacity(
-              opacity: hasResult ? _resultFadeAnimation.value : 0.0,
-              child: Transform.translate(
-                offset: hasResult ? _resultSlideAnimation.value : Offset.zero,
-                child: child,
-              ),
-            );
-          },
-          child: hasResult
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        state.resultLabel!,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: TossConfig.resultFontSize,
-                          fontWeight: FontWeight.w700,
-                          color: theme.colorScheme.onSurface,
-                          letterSpacing: 0.3,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        state.resultSide == CoinSide.heads ? 'Heads' : 'Tails',
-                        style: TextStyle(
-                          fontSize: TossConfig.labelFontSize,
-                          fontWeight: FontWeight.w500,
-                          color: theme.colorScheme.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              : const SizedBox.shrink(),
         ),
       ),
     );
